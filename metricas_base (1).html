@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Métricas Base — Mes 0</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e8eaf0; min-height: 100vh; padding: 32px 24px; }
+
+  h1 { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #6b7280; margin-bottom: 32px; }
+
+  .section-title {
+    font-size: 11px; font-weight: 600; letter-spacing: 1.2px;
+    text-transform: uppercase; color: #6b7280; margin-bottom: 14px;
+  }
+
+  /* KPI Cards */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 32px; }
+  .kpi {
+    background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 12px;
+    padding: 18px 20px; position: relative; overflow: hidden;
+  }
+  .kpi::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--accent);
+  }
+  .kpi-label { font-size: 11px; color: #6b7280; margin-bottom: 8px; font-weight: 500; }
+  .kpi-value { font-size: 28px; font-weight: 700; color: #fff; line-height: 1; }
+  .kpi-sub { font-size: 11px; color: #4b5563; margin-top: 6px; }
+  .kpi-tag {
+    display: inline-block; font-size: 10px; font-weight: 600;
+    padding: 2px 8px; border-radius: 20px; margin-top: 8px;
+    background: var(--tag-bg); color: var(--tag-color);
+  }
+
+  /* Funnel */
+  .funnel-wrap { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 12px; padding: 24px; margin-bottom: 32px; }
+  .funnel-row { display: flex; align-items: center; margin-bottom: 10px; gap: 12px; }
+  .funnel-label { width: 180px; font-size: 12px; color: #9ca3af; flex-shrink: 0; }
+  .funnel-bar-wrap { flex: 1; background: #12141d; border-radius: 6px; height: 32px; position: relative; overflow: hidden; }
+  .funnel-bar { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 12px; font-size: 12px; font-weight: 600; color: #fff; transition: width 1s ease; }
+  .funnel-pct { width: 52px; text-align: right; font-size: 12px; color: #6b7280; flex-shrink: 0; }
+  .funnel-n { width: 40px; text-align: right; font-size: 12px; font-weight: 600; color: #e8eaf0; flex-shrink: 0; }
+
+  /* Oportunidad */
+  .opp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 32px; }
+  .opp-card {
+    background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 12px; padding: 20px;
+  }
+  .opp-card.highlight { border-color: #3b82f6; background: #1a2035; }
+  .opp-title { font-size: 12px; color: #6b7280; margin-bottom: 10px; }
+  .opp-value { font-size: 22px; font-weight: 700; color: #fff; }
+  .opp-desc { font-size: 11px; color: #4b5563; margin-top: 6px; line-height: 1.5; }
+  .opp-delta { font-size: 13px; font-weight: 600; color: #34d399; margin-top: 8px; }
+
+  /* Hipótesis */
+  .hyp-wrap { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 12px; padding: 24px; margin-bottom: 32px; }
+  .hyp-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid #1e2130; }
+  .hyp-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .hyp-num { width: 28px; height: 28px; border-radius: 50%; background: #2a2d3a; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #9ca3af; flex-shrink: 0; }
+  .hyp-body { flex: 1; }
+  .hyp-metric { font-size: 12px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+  .hyp-now { font-size: 11px; color: #ef4444; }
+  .hyp-target { font-size: 11px; color: #34d399; }
+  .hyp-arrow { font-size: 11px; color: #6b7280; margin: 0 4px; }
+
+  /* Alerta */
+  .alert {
+    background: #1f1a10; border: 1px solid #92400e; border-radius: 12px;
+    padding: 16px 20px; font-size: 12px; color: #fbbf24; line-height: 1.7;
+  }
+  .alert strong { color: #f59e0b; }
+
+  @media (max-width: 600px) {
+    .opp-grid { grid-template-columns: 1fr; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .funnel-label { width: 120px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>📊 Métricas Base — Mes 0</h1>
+<p class="subtitle">Autocity · Plan de Ahorro · Punto de partida antes del sistema con IA</p>
+
+<!-- KPIs -->
+<p class="section-title">Estado actual</p>
+<div class="kpi-grid">
+
+  <div class="kpi" style="--accent:#3b82f6">
+    <div class="kpi-label">Leads por semana</div>
+    <div class="kpi-value">~17</div>
+    <div class="kpi-sub">Rango estimado: 10–25</div>
+    <span class="kpi-tag" style="--tag-bg:#1e3a5f;--tag-color:#60a5fa">~68/mes</span>
+  </div>
+
+  <div class="kpi" style="--accent:#ef4444">
+    <div class="kpi-label">Tasa de contacto efectivo</div>
+    <div class="kpi-value">&lt;20%</div>
+    <div class="kpi-sub">Menos de 14 personas/mes</div>
+    <span class="kpi-tag" style="--tag-bg:#3b1a1a;--tag-color:#f87171">🔴 Crítico</span>
+  </div>
+
+  <div class="kpi" style="--accent:#f59e0b">
+    <div class="kpi-label">Ventas por mes</div>
+    <div class="kpi-value">4–6</div>
+    <div class="kpi-sub">Promedio estimado: 5</div>
+    <span class="kpi-tag" style="--tag-bg:#3b2a0a;--tag-color:#fbbf24">⚠️ Mejorable</span>
+  </div>
+
+  <div class="kpi" style="--accent:#34d399">
+    <div class="kpi-label">Tasa de cierre (sobre contactados)</div>
+    <div class="kpi-value">~36%</div>
+    <div class="kpi-sub">5 ventas / ~14 contactos</div>
+    <span class="kpi-tag" style="--tag-bg:#0d3326;--tag-color:#34d399">✅ Buena</span>
+  </div>
+
+  <div class="kpi" style="--accent:#8b5cf6">
+    <div class="kpi-label">Velocidad de contacto</div>
+    <div class="kpi-value">Día 0</div>
+    <div class="kpi-sub">Mismo día que entra el lead</div>
+    <span class="kpi-tag" style="--tag-bg:#2d1f4e;--tag-color:#a78bfa">✅ Óptimo</span>
+  </div>
+
+  <div class="kpi" style="--accent:#ec4899">
+    <div class="kpi-label">Intentos por lead</div>
+    <div class="kpi-value">7</div>
+    <div class="kpi-sub">Multi-canal, multi-horario</div>
+    <span class="kpi-tag" style="--tag-bg:#3b0f26;--tag-color:#f472b6">✅ Agresivo</span>
+  </div>
+
+  <div class="kpi" style="--accent:#f97316">
+    <div class="kpi-label">Backlog dormido</div>
+    <div class="kpi-value">~65</div>
+    <div class="kpi-sub">Rango: 30–100 leads</div>
+    <span class="kpi-tag" style="--tag-bg:#3b1a08;--tag-color:#fb923c">💤 Oportunidad</span>
+  </div>
+
+  <div class="kpi" style="--accent:#06b6d4">
+    <div class="kpi-label">Conversión total (lead → venta)</div>
+    <div class="kpi-value">~7%</div>
+    <div class="kpi-sub">5 ventas / 68 leads</div>
+    <span class="kpi-tag" style="--tag-bg:#0a2a30;--tag-color:#22d3ee">📌 Referencia</span>
+  </div>
+
+</div>
+
+<!-- Funnel -->
+<p class="section-title">Embudo actual (mensual estimado)</p>
+<div class="funnel-wrap">
+
+  <div class="funnel-row">
+    <div class="funnel-label">Leads recibidos</div>
+    <div class="funnel-bar-wrap">
+      <div class="funnel-bar" style="width:100%;background:#3b82f6">68 leads</div>
+    </div>
+    <div class="funnel-pct">100%</div>
+    <div class="funnel-n">68</div>
+  </div>
+
+  <div class="funnel-row">
+    <div class="funnel-label">Contactados efectivos</div>
+    <div class="funnel-bar-wrap">
+      <div class="funnel-bar" style="width:20%;background:#8b5cf6">14</div>
+    </div>
+    <div class="funnel-pct">20%</div>
+    <div class="funnel-n">14</div>
+  </div>
+
+  <div class="funnel-row">
+    <div class="funnel-label">En conversación real</div>
+    <div class="funnel-bar-wrap">
+      <div class="funnel-bar" style="width:13%;background:#f59e0b">~9</div>
+    </div>
+    <div class="funnel-pct">13%</div>
+    <div class="funnel-n">~9</div>
+  </div>
+
+  <div class="funnel-row">
+    <div class="funnel-label">Ventas cerradas</div>
+    <div class="funnel-bar-wrap">
+      <div class="funnel-bar" style="width:7%;background:#34d399">5</div>
+    </div>
+    <div class="funnel-pct">7%</div>
+    <div class="funnel-n">5</div>
+  </div>
+
+</div>
+
+<!-- Diagnóstico clave -->
+<p class="section-title">Diagnóstico — dónde está el dinero perdido</p>
+<div class="opp-grid">
+
+  <div class="opp-card highlight">
+    <div class="opp-title">🔴 El cuello de botella real</div>
+    <div class="opp-value">54 leads/mes</div>
+    <div class="opp-desc">Son los leads que entraron, recibieron hasta 7 intentos de contacto y nunca respondieron. No es un problema de esfuerzo — es un problema de <strong>mensaje, timing o segmentación</strong>.</div>
+    <div class="opp-delta">→ Ahí vive tu mayor oportunidad</div>
+  </div>
+
+  <div class="opp-card">
+    <div class="opp-title">💤 Backlog dormido</div>
+    <div class="opp-value">~65 leads</div>
+    <div class="opp-desc">Leads que alguna vez mostraron interés y quedaron sin resolución. Con el mensaje correcto, una campaña de reactivación podría rescatar 5–15% de ellos.</div>
+    <div class="opp-delta">→ 3 a 10 ventas potenciales sin captar un lead nuevo</div>
+  </div>
+
+  <div class="opp-card">
+    <div class="opp-title">✅ Tu tasa de cierre real</div>
+    <div class="opp-value">36%</div>
+    <div class="opp-desc">Cuando lográs hablar con alguien, cerrás 1 de cada 3. Eso es muy bueno. El problema no sos vos vendiendo — es llegar a la conversación.</div>
+  </div>
+
+  <div class="opp-card">
+    <div class="opp-title">📈 Upside si contactás +10%</div>
+    <div class="opp-value">+2 a +3 ventas</div>
+    <div class="opp-desc">Si tu tasa de contacto sube de 20% a 30% manteniendo la misma tasa de cierre, pasás de 5 a 7–8 ventas por mes sin cambiar nada más.</div>
+    <div class="opp-delta">→ Ese es el objetivo del mes 1</div>
+  </div>
+
+</div>
+
+<!-- Hipótesis medibles -->
+<p class="section-title">Hipótesis a validar en 30 días</p>
+<div class="hyp-wrap">
+
+  <div class="hyp-item">
+    <div class="hyp-num">1</div>
+    <div class="hyp-body">
+      <div class="hyp-metric">Tasa de contacto efectivo</div>
+      <div class="hyp-now">🔴 Hoy: &lt;20% (~14 personas/mes)</div>
+      <span class="hyp-arrow">→</span>
+      <span class="hyp-target">🎯 Meta mes 1: 30% (~20 personas/mes)</span>
+    </div>
+  </div>
+
+  <div class="hyp-item">
+    <div class="hyp-num">2</div>
+    <div class="hyp-body">
+      <div class="hyp-metric">Ventas mensuales</div>
+      <div class="hyp-now">🔴 Hoy: 4–6 (promedio 5)</div>
+      <span class="hyp-arrow">→</span>
+      <span class="hyp-target">🎯 Meta mes 1: 7–8</span>
+    </div>
+  </div>
+
+  <div class="hyp-item">
+    <div class="hyp-num">3</div>
+    <div class="hyp-body">
+      <div class="hyp-metric">Leads del backlog reactivados</div>
+      <div class="hyp-now">🔴 Hoy: 0 sistemáticos</div>
+      <span class="hyp-arrow">→</span>
+      <span class="hyp-target">🎯 Meta mes 1: 5–10 contactos recuperados</span>
+    </div>
+  </div>
+
+  <div class="hyp-item">
+    <div class="hyp-num">4</div>
+    <div class="hyp-body">
+      <div class="hyp-metric">Conversión total lead → venta</div>
+      <div class="hyp-now">🔴 Hoy: ~7%</div>
+      <span class="hyp-arrow">→</span>
+      <span class="hyp-target">🎯 Meta mes 1: 10–12%</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Alerta -->
+<div class="alert">
+  <strong>⚠️ Lo que estos números confirman:</strong> Tu problema no es cantidad de leads ni capacidad de cierre. Es la brecha entre el lead que entra y la conversación que arranca. Cada punto porcentual que subas en contacto efectivo vale aproximadamente <strong>0.4 ventas adicionales por mes</strong>. El sistema de IA no necesita hacer magia — solo necesita ayudarte a llegar a más conversaciones con mejor contexto.
+</div>
+
+</body>
+</html>
