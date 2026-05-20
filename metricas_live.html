@@ -138,7 +138,7 @@
     <span class="config-label">URL Google Sheets (JSON)</span>
     <input class="config-input" id="sheets-url" type="text"
       placeholder="https://script.google.com/macros/s/.../exec"
-      value="https://script.google.com/macros/s/AKfycbx672MOAdx6fUri83wWNYOCbngEJmRytCHHfHUc6NJCGrROZvJCot-Vp5ksBOHxd1bd8g/exec">
+      value="https://script.google.com/macros/s/AKfycbyxoJ_y_0g6BVfUUl8_lIFOMLt43hENmFuSdNQOnDq7zXX_nZaM1AilNxLzfvqL5CLL/exec">
   </div>
   <div class="config-row">
     <span class="config-label">Meta Mes 1 — contacto</span>
@@ -202,7 +202,7 @@
 // ── Estado global ─────────────────────────────────────────────────────────
 let DATA = null;
 let CONFIG = {
-  sheetsUrl: 'https://script.google.com/macros/s/AKfycbx672MOAdx6fUri83wWNYOCbngEJmRytCHHfHUc6NJCGrROZvJCot-Vp5ksBOHxd1bd8g/exec',
+  sheetsUrl: 'https://script.google.com/macros/s/AKfycbyxoJ_y_0g6BVfUUl8_lIFOMLt43hENmFuSdNQOnDq7zXX_nZaM1AilNxLzfvqL5CLL/exec',
   metaContacto: 30,
   metaVentas: 7,
 };
@@ -243,30 +243,45 @@ function saveConfig() {
 // ── Carga de datos desde Google Sheets ───────────────────────────────────
 async function loadData() {
   setSyncState('loading', 'Conectando...');
+
+  // 1. Intentar leer de Google Sheets
   try {
     const url = CONFIG.sheetsUrl + '?action=getData&t=' + Date.now();
-    const res = await fetch(url, { mode: 'cors' });
-    const json = await res.json();
-    if (json && json.records) {
-      DATA = processRecords(json.records);
-      setSyncState('live', `${json.records.length} registros · ${now()}`);
-      render(DATA);
-    } else {
-      throw new Error('Sin datos');
-    }
-  } catch (e) {
-    // Si Sheets no responde, usar datos locales del localStorage
+    const res = await fetch(url, { mode: 'no-cors' });
+    // no-cors no permite leer el body — caemos al fallback
+    throw new Error('no-cors');
+  } catch (e) {}
+
+  // 2. Intentar leer del localStorage local (si el dashboard está abierto en el mismo browser que ASOFIX)
+  try {
     const local = localStorage.getItem('asofix_claude_records');
     if (local) {
       const records = JSON.parse(local);
-      DATA = processRecords(records);
-      setSyncState('live', `${records.length} locales · ${now()}`);
-      render(DATA);
-    } else {
-      setSyncState('error', 'Sin datos — cargá datos demo');
-      renderEmpty();
+      if (records.length > 0) {
+        DATA = processRecords(records);
+        setSyncState('live', `${records.length} registros locales · ${now()}`);
+        render(DATA);
+        return;
+      }
     }
-  }
+  } catch(e) {}
+
+  // 3. Intentar leer via URL params (la extensión puede pasar datos via URL)
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.get('data');
+    if (encoded) {
+      const records = JSON.parse(atob(encoded));
+      DATA = processRecords(records);
+      setSyncState('live', `${records.length} registros · ${now()}`);
+      render(DATA);
+      return;
+    }
+  } catch(e) {}
+
+  // 4. Sin datos
+  setSyncState('error', 'Sin datos — ejecutá ⚡ en ASOFIX primero');
+  renderEmpty();
 }
 
 // ── Procesar registros crudos ─────────────────────────────────────────────
@@ -542,6 +557,18 @@ function renderEmpty() {
 }
 
 // ── Demo data ─────────────────────────────────────────────────────────────
+function openFromASOFIX() {
+  // Intenta leer datos del localStorage de ASOFIX y abre el dashboard con ellos
+  const records = JSON.parse(localStorage.getItem('asofix_claude_records') || '[]');
+  if (records.length === 0) {
+    alert('No hay registros aún. Ejecutá ⚡ en la extensión primero.');
+    return;
+  }
+  const encoded = btoa(JSON.stringify(records));
+  const url = window.location.href.split('?')[0] + '?data=' + encoded;
+  window.open(url, '_blank');
+}
+
 function loadDemoData() {
   const demo = [];
   const horas = ['10:00','14:00','18:30','11:30','15:30','19:30'];
