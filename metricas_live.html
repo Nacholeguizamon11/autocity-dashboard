@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Métricas en Vivo — Autocity</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e8eaf0; min-height: 100vh; padding: 32px 24px; }
+
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: gap; gap: 12px; }
+  h1 { font-size: 22px; font-weight: 700; color: #fff; }
+  .subtitle { font-size: 13px; color: #6b7280; margin-top: 2px; }
+
+  .sync-box { display: flex; align-items: center; gap: 10px; }
+  .sync-status { font-size: 11px; color: #6b7280; }
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #374151; display: inline-block; margin-right: 4px; transition: background 0.3s; }
+  .sync-dot.live { background: #10b981; box-shadow: 0 0 6px #10b981; animation: pulse 2s infinite; }
+  .sync-dot.loading { background: #f59e0b; animation: pulse 0.8s infinite; }
+  .sync-dot.error { background: #ef4444; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s; }
+  .btn-primary { background: linear-gradient(135deg,#7c3aed,#5b21b6); color: #fff; }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-secondary { background: rgba(255,255,255,0.06); color: #94a3b8; border: 1px solid #2a2d3a; }
+  .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+  .section-title { font-size: 11px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: #6b7280; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .section-title::after { content:''; flex:1; height:1px; background:#1e2130; }
+
+  /* Modo selector */
+  .mode-tabs { display: flex; gap: 8px; margin-bottom: 24px; background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px; padding: 4px; width: fit-content; }
+  .mode-tab { padding: 6px 14px; border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer; color: #6b7280; transition: all 0.2s; border: none; background: transparent; }
+  .mode-tab.active { background: #7c3aed; color: #fff; }
+
+  /* KPI Cards */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 32px; }
+  .kpi { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 12px; padding: 18px 20px; position: relative; overflow: hidden; transition: border-color 0.3s; }
+  .kpi::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background: var(--accent); }
+  .kpi-label { font-size: 11px; color: #6b7280; margin-bottom: 8px; font-weight: 500; }
+  .kpi-value { font-size: 28px; font-weight: 700; color: #fff; line-height: 1; transition: all 0.4s; }
+  .kpi-sub { font-size: 11px; color: #4b5563; margin-top: 6px; }
+  .kpi-delta { font-size: 11px; font-weight: 600; margin-top: 6px; }
+  .kpi-delta.up { color: #10b981; }
+  .kpi-delta.down { color: #ef4444; }
+  .kpi-delta.neutral { color: #6b7280; }
+  .kpi-tag { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; margin-top: 8px; background: var(--tag-bg); color: var(--tag-color); }
+
+  /* Funnel */
+  .funnel-wrap { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 12px; padding: 24px; margin-bottom: 32px; }
+  .funnel-row { display: flex; align-items: center; margin-bottom: 10px; gap: 12px; }
+  .funnel-label { width: 180px; font-size: 12px; color: #9ca3af; flex-shrink: 0; }
+  .funnel-bar-wrap { flex: 1; background: #12141d; border-radius: 6px; height: 32px; overflow: hidden; }
+  .funnel-bar { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 12px; font-size: 12px; font-weight: 600; color: #fff; transition: width 0.8s ease; min-width: 40px; }
+  .funnel-pct { width: 52px; text-align: right; font-size: 12px; color: #6b7280; flex-shrink: 0; }
+  .funnel-n { width: 40px; text-align: right; font-size: 12px; font-weight: 600; color: #e8eaf0; flex-shrink: 0; }
+
+  /* Horario */
+  .horario-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 32px; }
+  .hora-card { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px; padding: 14px 16px; position: relative; }
+  .hora-card.best { border-color: #7c3aed; background: #1a1030; }
+  .hora-card.best::after { content: '🏆 Mejor franja'; position: absolute; top: -8px; right: 10px; font-size: 9px; background: #7c3aed; color: #fff; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+  .hora-time { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .hora-label { font-size: 10px; color: #6b7280; margin-bottom: 10px; }
+  .hora-bar-wrap { background: #12141d; border-radius: 4px; height: 6px; margin-bottom: 6px; overflow: hidden; }
+  .hora-bar { height: 100%; border-radius: 4px; background: var(--hcolor, #7c3aed); transition: width 0.8s ease; }
+  .hora-stats { display: flex; justify-content: space-between; font-size: 10px; color: #6b7280; }
+  .hora-rate { font-size: 13px; font-weight: 700; color: var(--hcolor, #7c3aed); }
+
+  /* Segmentos */
+  .seg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 32px; }
+  .seg-card { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px; padding: 14px 16px; }
+  .seg-letter { font-size: 22px; font-weight: 800; color: #fff; }
+  .seg-name { font-size: 10px; color: #6b7280; margin-bottom: 10px; margin-top: 2px; }
+  .seg-stats { font-size: 11px; color: #94a3b8; line-height: 1.8; }
+  .seg-rate { font-size: 14px; font-weight: 700; margin-top: 6px; }
+
+  /* Hipótesis */
+  .hyp-wrap { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 12px; padding: 24px; margin-bottom: 32px; }
+  .hyp-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid #1e2130; align-items: center; }
+  .hyp-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .hyp-num { width: 28px; height: 28px; border-radius: 50%; background: #2a2d3a; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #9ca3af; flex-shrink: 0; }
+  .hyp-body { flex: 1; }
+  .hyp-metric { font-size: 12px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+  .hyp-progress-wrap { background: #12141d; border-radius: 4px; height: 8px; margin-top: 8px; overflow: hidden; }
+  .hyp-progress { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+  .hyp-labels { display: flex; justify-content: space-between; font-size: 10px; margin-top: 4px; }
+  .hyp-now-val { color: #ef4444; }
+  .hyp-target-val { color: #34d399; }
+  .hyp-current-val { color: #7c3aed; font-weight: 700; }
+
+  /* Config panel */
+  .config-panel { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 12px; padding: 20px; margin-bottom: 32px; display: none; }
+  .config-panel.open { display: block; }
+  .config-title { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 14px; }
+  .config-row { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+  .config-label { font-size: 12px; color: #6b7280; width: 160px; flex-shrink: 0; }
+  .config-input { background: #12141d; border: 1px solid #2a2d3a; border-radius: 6px; padding: 6px 10px; color: #e8eaf0; font-size: 12px; flex: 1; min-width: 200px; }
+  .config-input:focus { outline: none; border-color: #7c3aed; }
+
+  /* Alert */
+  .alert { background: #1f1a10; border: 1px solid #92400e; border-radius: 12px; padding: 16px 20px; font-size: 12px; color: #fbbf24; line-height: 1.7; }
+  .alert strong { color: #f59e0b; }
+
+  /* Loading skeleton */
+  .skeleton { background: linear-gradient(90deg, #1a1d27 25%, #22253a 50%, #1a1d27 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+  .last-update { font-size: 10px; color: #374151; margin-top: 4px; }
+
+  @media (max-width: 600px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .funnel-label { width: 110px; font-size: 11px; }
+    .opp-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div>
+    <h1>📊 Métricas en Vivo</h1>
+    <p class="subtitle">Autocity · Plan de Ahorro · Ignacio Leguizamón</p>
+  </div>
+  <div class="sync-box">
+    <span class="sync-dot" id="sync-dot"></span>
+    <span class="sync-status" id="sync-status">Sin datos aún</span>
+    <button class="btn btn-primary" onclick="loadData()" style="margin-left:8px">↻ Actualizar</button>
+    <button class="btn btn-secondary" onclick="toggleConfig()" style="margin-left:4px">⚙ Config</button>
+  </div>
+</div>
+
+<!-- Config panel -->
+<div class="config-panel" id="config-panel">
+  <div class="config-title">Configuración de fuente de datos</div>
+  <div class="config-row">
+    <span class="config-label">URL Google Sheets (JSON)</span>
+    <input class="config-input" id="sheets-url" type="text"
+      placeholder="https://script.google.com/macros/s/.../exec"
+      value="https://script.google.com/macros/s/AKfycbx672MOAdx6fUri83wWNYOCbngEJmRytCHHfHUc6NJCGrROZvJCot-Vp5ksBOHxd1bd8g/exec">
+  </div>
+  <div class="config-row">
+    <span class="config-label">Meta Mes 1 — contacto</span>
+    <input class="config-input" id="meta-contacto" type="number" value="30" min="1" max="100"> %
+  </div>
+  <div class="config-row">
+    <span class="config-label">Meta Mes 1 — ventas</span>
+    <input class="config-input" id="meta-ventas" type="number" value="7" min="1">
+  </div>
+  <div style="margin-top:12px; display:flex; gap:8px;">
+    <button class="btn btn-primary" onclick="saveConfig()">Guardar y recargar</button>
+    <button class="btn btn-secondary" onclick="loadDemoData()">Cargar datos demo</button>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="mode-tabs">
+  <button class="mode-tab active" onclick="setTab('resumen')">Resumen</button>
+  <button class="mode-tab" onclick="setTab('horarios')">Horarios</button>
+  <button class="mode-tab" onclick="setTab('segmentos')">Segmentos</button>
+  <button class="mode-tab" onclick="setTab('hipotesis')">Hipótesis</button>
+</div>
+
+<!-- ── TAB RESUMEN ── -->
+<div id="tab-resumen">
+  <p class="section-title">Estado actual</p>
+  <div class="kpi-grid" id="kpi-grid">
+    <!-- generado por JS -->
+  </div>
+
+  <p class="section-title">Embudo</p>
+  <div class="funnel-wrap" id="funnel-wrap">
+    <!-- generado por JS -->
+  </div>
+
+  <div class="alert" id="alert-box"></div>
+</div>
+
+<!-- ── TAB HORARIOS ── -->
+<div id="tab-horarios" style="display:none">
+  <p class="section-title">Tasa de respuesta por franja horaria</p>
+  <div class="horario-grid" id="horario-grid"></div>
+  <div class="alert" id="alert-horarios"></div>
+</div>
+
+<!-- ── TAB SEGMENTOS ── -->
+<div id="tab-segmentos" style="display:none">
+  <p class="section-title">Rendimiento por segmento</p>
+  <div class="seg-grid" id="seg-grid"></div>
+</div>
+
+<!-- ── TAB HIPÓTESIS ── -->
+<div id="tab-hipotesis" style="display:none">
+  <p class="section-title">Hipótesis a validar — Mes 1</p>
+  <div class="hyp-wrap" id="hyp-wrap"></div>
+</div>
+
+<p class="last-update" id="last-update"></p>
+
+<script>
+// ── Estado global ─────────────────────────────────────────────────────────
+let DATA = null;
+let CONFIG = {
+  sheetsUrl: 'https://script.google.com/macros/s/AKfycbx672MOAdx6fUri83wWNYOCbngEJmRytCHHfHUc6NJCGrROZvJCot-Vp5ksBOHxd1bd8g/exec',
+  metaContacto: 30,
+  metaVentas: 7,
+};
+
+// Línea base Mes 0
+const BASE = {
+  leadsSemanales: 17,
+  leadsMes: 68,
+  tasaContacto: 20,
+  ventas: 5,
+  tasaCierre: 36,
+  backlog: 65,
+  conversion: 7,
+};
+
+// ── Tabs ──────────────────────────────────────────────────────────────────
+function setTab(tab) {
+  ['resumen','horarios','segmentos','hipotesis'].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = t === tab ? 'block' : 'none';
+    document.querySelectorAll('.mode-tab').forEach((el, i) => {
+      el.classList.toggle('active', el.textContent.toLowerCase().includes(tab.substring(0,4)));
+    });
+  });
+}
+
+// ── Config ────────────────────────────────────────────────────────────────
+function toggleConfig() {
+  document.getElementById('config-panel').classList.toggle('open');
+}
+function saveConfig() {
+  CONFIG.sheetsUrl = document.getElementById('sheets-url').value;
+  CONFIG.metaContacto = parseInt(document.getElementById('meta-contacto').value) || 30;
+  CONFIG.metaVentas = parseInt(document.getElementById('meta-ventas').value) || 7;
+  toggleConfig();
+  loadData();
+}
+
+// ── Carga de datos desde Google Sheets ───────────────────────────────────
+async function loadData() {
+  setSyncState('loading', 'Conectando...');
+  try {
+    const url = CONFIG.sheetsUrl + '?action=getData&t=' + Date.now();
+    const res = await fetch(url, { mode: 'cors' });
+    const json = await res.json();
+    if (json && json.records) {
+      DATA = processRecords(json.records);
+      setSyncState('live', `${json.records.length} registros · ${now()}`);
+      render(DATA);
+    } else {
+      throw new Error('Sin datos');
+    }
+  } catch (e) {
+    // Si Sheets no responde, usar datos locales del localStorage
+    const local = localStorage.getItem('asofix_claude_records');
+    if (local) {
+      const records = JSON.parse(local);
+      DATA = processRecords(records);
+      setSyncState('live', `${records.length} locales · ${now()}`);
+      render(DATA);
+    } else {
+      setSyncState('error', 'Sin datos — cargá datos demo');
+      renderEmpty();
+    }
+  }
+}
+
+// ── Procesar registros crudos ─────────────────────────────────────────────
+function processRecords(records) {
+  const total = records.length;
+  const enviados = records.filter(r => r.waResult === 'enviado' || r.resultado_wa === 'enviado').length;
+  const uniqueUuids = [...new Set(records.map(r => r.uuid).filter(Boolean))];
+  const leads = uniqueUuids.length || total;
+
+  // Por hora
+  const horas = {};
+  records.forEach(r => {
+    const h = r.horaIntento || r.hora_intento || '';
+    if (!h) return;
+    if (!horas[h]) horas[h] = { total: 0, enviados: 0 };
+    horas[h].total++;
+    if (r.waResult === 'enviado' || r.resultado_wa === 'enviado') horas[h].enviados++;
+  });
+
+  // Por segmento
+  const segs = {};
+  records.forEach(r => {
+    const s = (r.segmento || 'E').charAt(0).toUpperCase();
+    if (!segs[s]) segs[s] = { total: 0, enviados: 0 };
+    segs[s].total++;
+    if (r.waResult === 'enviado' || r.resultado_wa === 'enviado') segs[s].enviados++;
+  });
+
+  // Mejor hora
+  let bestHora = '', bestRate = 0;
+  Object.entries(horas).forEach(([h, d]) => {
+    const rate = d.total > 0 ? d.enviados / d.total : 0;
+    if (rate > bestRate) { bestRate = rate; bestHora = h; }
+  });
+
+  // Tasa de contacto estimada (enviados / leads únicos)
+  const tasaContacto = leads > 0 ? Math.round((enviados / leads) * 100) : BASE.tasaContacto;
+
+  return { total, enviados, leads, horas, segs, bestHora, bestRate, tasaContacto, records };
+}
+
+// ── Render principal ──────────────────────────────────────────────────────
+function render(d) {
+  renderKPIs(d);
+  renderFunnel(d);
+  renderHorarios(d);
+  renderSegmentos(d);
+  renderHipotesis(d);
+  renderAlerts(d);
+  document.getElementById('last-update').textContent = 'Última actualización: ' + now();
+}
+
+function renderKPIs(d) {
+  const tasaContacto = d.tasaContacto;
+  const deltaContacto = tasaContacto - BASE.tasaContacto;
+  const kpis = [
+    {
+      label: 'Leads procesados', value: d.total,
+      sub: `${d.leads} leads únicos`,
+      accent: '#3b82f6', tagBg: '#1e3a5f', tagColor: '#60a5fa',
+      tag: `${d.leads}/mes`, delta: null
+    },
+    {
+      label: 'Mensajes WA enviados', value: d.enviados,
+      sub: `de ${d.total} intentos`,
+      accent: '#7c3aed', tagBg: '#2d1f4e', tagColor: '#a78bfa',
+      tag: `${d.total > 0 ? Math.round(d.enviados/d.total*100) : 0}% éxito`,
+      delta: null
+    },
+    {
+      label: 'Tasa de contacto estimada', value: tasaContacto + '%',
+      sub: `Base: ${BASE.tasaContacto}%`,
+      accent: tasaContacto > BASE.tasaContacto ? '#10b981' : '#ef4444',
+      tagBg: tasaContacto > BASE.tasaContacto ? '#0d3326' : '#3b1a1a',
+      tagColor: tasaContacto > BASE.tasaContacto ? '#34d399' : '#f87171',
+      tag: tasaContacto > BASE.tasaContacto ? '📈 Mejorando' : '🔴 Base',
+      delta: deltaContacto !== 0 ? { val: (deltaContacto > 0 ? '+' : '') + deltaContacto + '%', up: deltaContacto > 0 } : null
+    },
+    {
+      label: 'Mejor franja horaria', value: d.bestHora || '—',
+      sub: d.bestHora ? `${Math.round(d.bestRate * 100)}% tasa respuesta` : 'Acumulando datos',
+      accent: '#f59e0b', tagBg: '#3b2a0a', tagColor: '#fbbf24',
+      tag: d.bestHora ? '✅ Identificada' : '⏳ Pendiente', delta: null
+    },
+    {
+      label: 'Segmento con más envíos', value: topSegmento(d),
+      sub: 'Mayor volumen de intentos',
+      accent: '#ec4899', tagBg: '#3b0f26', tagColor: '#f472b6',
+      tag: 'Top segmento', delta: null
+    },
+    {
+      label: 'Rotación activa', value: `${countRotacion(d)}/6`,
+      sub: 'Franjas horarias usadas',
+      accent: '#06b6d4', tagBg: '#0a2a30', tagColor: '#22d3ee',
+      tag: countRotacion(d) >= 6 ? '✅ Completa' : '⏳ En curso', delta: null
+    },
+  ];
+
+  document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
+    <div class="kpi" style="--accent:${k.accent}">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-sub">${k.sub}</div>
+      ${k.delta ? `<div class="kpi-delta ${k.delta.up ? 'up' : 'down'}">${k.delta.up ? '↑' : '↓'} ${k.delta.val} vs base</div>` : ''}
+      <span class="kpi-tag" style="--tag-bg:${k.tagBg};--tag-color:${k.tagColor}">${k.tag}</span>
+    </div>
+  `).join('');
+}
+
+function renderFunnel(d) {
+  const leads = Math.max(d.leads, BASE.leadsMes);
+  const contactados = d.enviados;
+  const pctContacto = leads > 0 ? Math.round(contactados / leads * 100) : 0;
+  const enConv = Math.round(contactados * 0.6); // estimado
+  const ventas = BASE.ventas; // hasta tener dato real
+
+  document.getElementById('funnel-wrap').innerHTML = `
+    <div class="funnel-row">
+      <div class="funnel-label">Leads recibidos</div>
+      <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:100%;background:#3b82f6">${leads} leads</div></div>
+      <div class="funnel-pct">100%</div>
+      <div class="funnel-n">${leads}</div>
+    </div>
+    <div class="funnel-row">
+      <div class="funnel-label">WA enviados</div>
+      <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${Math.max(pctContacto,3)}%;background:#7c3aed">${contactados}</div></div>
+      <div class="funnel-pct">${pctContacto}%</div>
+      <div class="funnel-n">${contactados}</div>
+    </div>
+    <div class="funnel-row">
+      <div class="funnel-label">En conversación (est.)</div>
+      <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${Math.max(Math.round(enConv/leads*100),2)}%;background:#f59e0b">${enConv}</div></div>
+      <div class="funnel-pct">${leads > 0 ? Math.round(enConv/leads*100) : 0}%</div>
+      <div class="funnel-n">${enConv}</div>
+    </div>
+    <div class="funnel-row">
+      <div class="funnel-label">Ventas cerradas</div>
+      <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${Math.max(Math.round(ventas/leads*100),1)}%;background:#34d399">${ventas}</div></div>
+      <div class="funnel-pct">${leads > 0 ? Math.round(ventas/leads*100) : 0}%</div>
+      <div class="funnel-n">${ventas}</div>
+    </div>
+  `;
+}
+
+function renderHorarios(d) {
+  const FRANJAS = [
+    { hora: '10:00', label: 'D1 · Intento 1', color: '#3b82f6' },
+    { hora: '14:00', label: 'D1 · Intento 2', color: '#7c3aed' },
+    { hora: '18:30', label: 'D1 · Intento 3', color: '#ec4899' },
+    { hora: '11:30', label: 'D2 · Intento 1', color: '#f59e0b' },
+    { hora: '15:30', label: 'D2 · Intento 2', color: '#f97316' },
+    { hora: '19:30', label: 'D3 · Intento 1', color: '#06b6d4' },
+  ];
+
+  const maxTotal = Math.max(...FRANJAS.map(f => (d.horas[f.hora]?.total || 0)), 1);
+
+  document.getElementById('horario-grid').innerHTML = FRANJAS.map(f => {
+    const stats = d.horas[f.hora] || { total: 0, enviados: 0 };
+    const rate = stats.total > 0 ? Math.round(stats.enviados / stats.total * 100) : 0;
+    const barW = Math.round(stats.total / maxTotal * 100);
+    const isBest = f.hora === d.bestHora && stats.total > 0;
+    return `
+      <div class="hora-card ${isBest ? 'best' : ''}" style="--hcolor:${f.color}">
+        <div class="hora-time">${f.hora}</div>
+        <div class="hora-label">${f.label}</div>
+        <div class="hora-bar-wrap"><div class="hora-bar" style="width:${barW}%"></div></div>
+        <div class="hora-stats">
+          <span>${stats.total} intentos</span>
+          <span class="hora-rate">${rate}%</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('alert-horarios').innerHTML = d.total < 20
+    ? '<strong>⏳ Acumulando datos:</strong> Necesitás al menos 20 intentos registrados para que los patrones de horario sean confiables. Seguí ejecutando la extensión.'
+    : `<strong>✅ Patrón detectado:</strong> La franja con mayor tasa de respuesta es <strong>${d.bestHora}</strong> con ${Math.round(d.bestRate*100)}%. Priorizá esa franja para nuevos leads Segmento A.`;
+}
+
+function renderSegmentos(d) {
+  const SEGS = [
+    { key: 'A', name: 'Listo para arrancar', color: '#ef4444' },
+    { key: 'B', name: 'Comparando opciones', color: '#f59e0b' },
+    { key: 'C', name: 'Capital/permuta',      color: '#10b981' },
+    { key: 'D', name: 'Timing incierto',       color: '#3b82f6' },
+    { key: 'E', name: 'Lead frío',             color: '#6b7280' },
+  ];
+
+  document.getElementById('seg-grid').innerHTML = SEGS.map(s => {
+    const stats = d.segs[s.key] || { total: 0, enviados: 0 };
+    const rate = stats.total > 0 ? Math.round(stats.enviados / stats.total * 100) : 0;
+    return `
+      <div class="seg-card">
+        <div class="seg-letter" style="color:${s.color}">${s.key}</div>
+        <div class="seg-name">${s.name}</div>
+        <div class="seg-stats">
+          Intentos: <strong>${stats.total}</strong><br>
+          WA enviados: <strong>${stats.enviados}</strong>
+        </div>
+        <div class="seg-rate" style="color:${s.color}">${rate}% éxito</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderHipotesis(d) {
+  const tasaContacto = d.tasaContacto;
+  const ventasMes = BASE.ventas;
+  const backlogReact = d.segs['E'] ? Math.round(d.segs['E'].enviados * 0.1) : 0;
+  const conversion = d.leads > 0 ? Math.round(ventasMes / d.leads * 100) : BASE.conversion;
+
+  const hipos = [
+    {
+      num: 1, metric: 'Tasa de contacto efectivo',
+      base: BASE.tasaContacto, actual: tasaContacto, meta: CONFIG.metaContacto,
+      fmt: v => v + '%', color: '#7c3aed'
+    },
+    {
+      num: 2, metric: 'Ventas mensuales',
+      base: BASE.ventas, actual: ventasMes, meta: CONFIG.metaVentas,
+      fmt: v => v, color: '#10b981'
+    },
+    {
+      num: 3, metric: 'Leads backlog reactivados',
+      base: 0, actual: backlogReact, meta: 10,
+      fmt: v => v, color: '#f59e0b'
+    },
+    {
+      num: 4, metric: 'Conversión total lead → venta',
+      base: BASE.conversion, actual: conversion, meta: 10,
+      fmt: v => v + '%', color: '#06b6d4'
+    },
+  ];
+
+  document.getElementById('hyp-wrap').innerHTML = hipos.map(h => {
+    const pct = Math.min(Math.round(((h.actual - h.base) / (h.meta - h.base)) * 100), 100);
+    const pctSafe = Math.max(pct, 0);
+    return `
+      <div class="hyp-item">
+        <div class="hyp-num">${h.num}</div>
+        <div class="hyp-body">
+          <div class="hyp-metric">${h.metric}</div>
+          <div class="hyp-progress-wrap">
+            <div class="hyp-progress" style="width:${pctSafe}%;background:${h.color}"></div>
+          </div>
+          <div class="hyp-labels">
+            <span class="hyp-now-val">Base: ${h.fmt(h.base)}</span>
+            <span class="hyp-current-val">Ahora: ${h.fmt(h.actual)}</span>
+            <span class="hyp-target-val">Meta: ${h.fmt(h.meta)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderAlerts(d) {
+  const msg = d.total === 0
+    ? '<strong>⏳ Sin datos aún:</strong> Instalá la extensión v10-final, ejecutá ⚡ en los primeros leads y los datos aparecerán acá automáticamente.'
+    : `<strong>📊 Sistema activo:</strong> ${d.total} intentos registrados sobre ${d.leads} leads únicos. Tasa de envío exitoso: ${d.total > 0 ? Math.round(d.enviados/d.total*100) : 0}%. ${d.bestHora ? `Mejor franja detectada: <strong>${d.bestHora}</strong>.` : 'Seguí acumulando datos para detectar la mejor franja horaria.'}`;
+  document.getElementById('alert-box').innerHTML = msg;
+}
+
+function renderEmpty() {
+  document.getElementById('kpi-grid').innerHTML = `
+    <div class="kpi" style="--accent:#374151;grid-column:1/-1;text-align:center;padding:32px">
+      <div class="kpi-value" style="font-size:16px;color:#6b7280">Sin datos todavía</div>
+      <div class="kpi-sub" style="margin-top:8px">Ejecutá ⚡ en la extensión Chrome sobre los leads de ASOFIX para que aparezcan las métricas acá</div>
+    </div>
+  `;
+  document.getElementById('funnel-wrap').innerHTML = '';
+  document.getElementById('alert-box').innerHTML = '<strong>⏳ Esperando datos:</strong> La extensión Chrome enviará automáticamente cada registro a este dashboard cuando ejecutes ⚡ en una ficha de ASOFIX.';
+}
+
+// ── Demo data ─────────────────────────────────────────────────────────────
+function loadDemoData() {
+  const demo = [];
+  const horas = ['10:00','14:00','18:30','11:30','15:30','19:30'];
+  const segs = ['A','A','B','B','B','C','D','D','D','E'];
+  const autos = ['PEUGEOT EXPERT','PEUGEOT 208','PEUGEOT 2008','FIAT CRONOS','PEUGEOT PARTNER'];
+  for (let i = 0; i < 45; i++) {
+    demo.push({
+      uuid: 'demo-' + (i % 20),
+      nombre: 'Lead Demo ' + i,
+      auto: autos[i % autos.length],
+      origen: ['Instagram','Facebook','Formulario Web'][i % 3],
+      dias: String(Math.floor(Math.random() * 25)),
+      segmento: segs[i % segs.length],
+      prioridad: ['MÁXIMA','ALTA','MEDIA'][i % 3],
+      template: 'T' + ((i % 8) + 1),
+      hsm: 'primercontacto',
+      horaIntento: horas[i % horas.length],
+      diaRotacion: String((i % 3) + 1),
+      nroIntento: String((i % 3) + 1),
+      waResult: Math.random() > 0.35 ? 'enviado' : 'seleccionado',
+    });
+  }
+  DATA = processRecords(demo);
+  setSyncState('live', `${demo.length} registros demo · ${now()}`);
+  render(DATA);
+  toggleConfig();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function setSyncState(state, msg) {
+  const dot = document.getElementById('sync-dot');
+  const status = document.getElementById('sync-status');
+  dot.className = 'sync-dot ' + state;
+  status.textContent = msg;
+}
+
+function topSegmento(d) {
+  let best = '—', max = 0;
+  Object.entries(d.segs).forEach(([k, v]) => { if (v.total > max) { max = v.total; best = k; } });
+  return best;
+}
+
+function countRotacion(d) {
+  return Object.keys(d.horas).length;
+}
+
+function now() {
+  return new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+// Intentar cargar datos reales al abrir
+loadData();
+
+// Auto-refresh cada 5 minutos
+setInterval(loadData, 5 * 60 * 1000);
+</script>
+</body>
+</html>
