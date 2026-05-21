@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Instalar — ASOFIX Sistema</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; background: #080810; color: #e8e8f0; padding: 40px 24px; max-width: 600px; margin: 0 auto; }
+h1 { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+.sub { font-size: 13px; color: #5a5a7a; margin-bottom: 40px; }
+.card { background: #0f0f1c; border: 1px solid #1e1e35; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.num { display: inline-flex; width: 26px; height: 26px; border-radius: 50%; background: #6c47ff; color: #fff; font-size: 12px; font-weight: 700; align-items: center; justify-content: center; margin-right: 8px; }
+.title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+.desc { font-size: 12px; color: #5a5a7a; line-height: 1.7; margin-left: 34px; }
+.btn { display: inline-block; padding: 12px 20px; background: linear-gradient(135deg,#6c47ff,#00d4ff); color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; margin: 10px 0; font-family: Arial; }
+code { background: #12141d; padding: 2px 6px; border-radius: 4px; font-size: 11px; color: #00d4ff; }
+.ok { color: #00e57a; font-size: 11px; margin-left: 8px; display: none; }
+</style>
+</head>
+<body>
+<h1>🤖 ASOFIX → Sistema v2</h1>
+<p class="sub">Autocity · Ignacio Leguizamón · Bookmarklet</p>
+
+<div class="card">
+  <div class="title"><span class="num">1</span>Activar barra de favoritos</div>
+  <div class="desc">Si no la ves, presioná <code>Ctrl+Shift+B</code> en Chrome.</div>
+</div>
+
+<div class="card">
+  <div class="title"><span class="num">2</span>Crear el favorito</div>
+  <div class="desc">
+    Clic derecho en la barra de favoritos → <strong style="color:#e8e8f0">Agregar página</strong><br><br>
+    <strong style="color:#e8e8f0">Nombre:</strong> ASOFIX Sistema<br><br>
+    <strong style="color:#e8e8f0">URL:</strong> tocá el botón para copiar y pegarlo en el campo URL<br><br>
+    <button class="btn" onclick="copiar()">📋 Copiar URL del bookmarklet</button>
+    <span class="ok" id="ok-msg">✅ Copiado — pegalo en el campo URL y guardá</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="title"><span class="num">3</span>Usarlo</div>
+  <div class="desc">
+    Abrís <strong style="color:#e8e8f0">ASOFIX</strong> en Chrome → tocás el favorito <strong style="color:#e8e8f0">ASOFIX Sistema</strong> → aparece el panel lateral con todos tus leads cargados automáticamente.
+  </div>
+</div>
+
+<div class="card">
+  <div class="title"><span class="num">4</span>Qué hace</div>
+  <div class="desc">
+    ⚡ Carga todos tus leads con segmento, score y hora rotativa<br>
+    📤 Envía WhatsApp con la plantilla correcta con un clic<br>
+    🔄 Batch automático: procesa todos los leads del día solo<br>
+    🔔 Verifica respuestas entrantes<br>
+    📊 Registra todo en Google Sheets en tiempo real
+  </div>
+</div>
+
+<script>
+const BM = "javascript:(function(){var s=document.createElement('script');s.src='https://nacholeguizamon11.github.io/autocity-dashboard/asofix_sistema.js?t='+Date.now();s.onerror=function(){alert('Error cargando. Verificá internet.');};document.head.appendChild(s);})();";
+
+function copiar() {
+  navigator.clipboard.writeText(BM).then(() => {
+    document.getElementById('ok-msg').style.display = 'inline';
+    setTimeout(() => document.getElementById('ok-msg').style.display = 'none', 5000);
+  }).catch(() => {
+    prompt('Copiá manualmente:', BM);
+  });
+}
+</script>
+</body>
+</html>
